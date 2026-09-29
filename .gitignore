@@ -1,0 +1,25 @@
+# Node / Vite
+node_modules/
+dist/
+build/
+.npm
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Java / IDE
+FHMS/bin/
+.vscode/
+.idea/
+*.class
+
+# SQLite local data
+*.db
+*.db-journal
+
+# OS
+.DS_Store
+Thumbs.db
