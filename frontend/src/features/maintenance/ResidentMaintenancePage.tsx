@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Wrench, Plus, AlertCircle, Trash2, Clock, CheckCircle } from 'lucide-react';
+import { Wrench, Plus, AlertCircle, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react';
 import api from '../../lib/api.js';
 import { PageHeader } from '../../components/shared/PageHeader.js';
 import { StatusPill } from '../../components/shared/StatusPill.js';
@@ -16,6 +16,7 @@ export function ResidentMaintenancePage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>('all');
   const [cancelTarget, setCancelTarget] = useState<MaintenanceRequest | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MaintenanceRequest | null>(null);
 
   const { data: requests = [], isLoading } = useQuery<MaintenanceRequest[]>({
     queryKey: ['portal', 'my-maintenance'],
@@ -39,6 +40,20 @@ export function ResidentMaintenancePage() {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (requestId: number) => {
+      await api.delete(`/maintenance/${requestId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portal', 'my-maintenance'] });
+      toast.success('Maintenance ticket record removed.');
+      setDeleteTarget(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error?.message || 'Failed to delete request.');
+    }
+  });
+
   const filteredRequests = requests.filter((r) => {
     if (activeTab === 'all') return true;
     return r.status === activeTab;
@@ -47,6 +62,7 @@ export function ResidentMaintenancePage() {
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const inProgressCount = requests.filter((r) => r.status === 'in_progress').length;
   const resolvedCount = requests.filter((r) => r.status === 'resolved').length;
+  const cancelledCount = requests.filter((r) => r.status === 'cancelled').length;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -88,6 +104,12 @@ export function ResidentMaintenancePage() {
           className={`pb-3 px-3 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'resolved' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
         >
           Resolved ({resolvedCount})
+        </button>
+        <button
+          onClick={() => setActiveTab('cancelled')}
+          className={`pb-3 px-3 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'cancelled' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+        >
+          Cancelled ({cancelledCount})
         </button>
       </div>
 
@@ -135,9 +157,21 @@ export function ResidentMaintenancePage() {
                   {req.status === 'pending' && (
                     <button
                       onClick={() => setCancelTarget(req)}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors border border-destructive/20"
                       title="Cancel Request"
                       aria-label="Cancel Request"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      <span>Cancel</span>
+                    </button>
+                  )}
+
+                  {req.status === 'cancelled' && (
+                    <button
+                      onClick={() => setDeleteTarget(req)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="Delete Ticket Record"
+                      aria-label="Delete Ticket Record"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -148,6 +182,13 @@ export function ResidentMaintenancePage() {
               <p className="text-sm text-foreground/90 bg-muted/30 p-3.5 rounded-xl leading-relaxed">
                 {req.description}
               </p>
+
+              {req.status === 'cancelled' && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium bg-muted/40 p-2.5 rounded-xl border border-border">
+                  <AlertCircle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  This maintenance ticket was cancelled and withdrawn from review.
+                </div>
+              )}
 
               {req.admin_notes && (
                 <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-blue-700 dark:text-blue-300">
@@ -173,10 +214,22 @@ export function ResidentMaintenancePage() {
         onClose={() => setCancelTarget(null)}
         onConfirm={() => cancelTarget && cancelMutation.mutate(cancelTarget.id)}
         title="Cancel Maintenance Request?"
-        description={`Are you sure you want to cancel Ticket #${cancelTarget?.id} (${cancelTarget?.problem})? This will remove it from the Estate Office work queue.`}
-        confirmText="Cancel Request"
+        description={`Are you sure you want to cancel Ticket #${cancelTarget?.id} (${cancelTarget?.problem})? It will be marked as cancelled and withdrawn from Estate Office review.`}
+        confirmText="Cancel Ticket"
         variant="danger"
         isLoading={cancelMutation.isPending}
+      />
+
+      {/* Confirm Deletion Dialog */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        title="Delete Maintenance Ticket Record?"
+        description={`Are you sure you want to permanently delete Ticket #${deleteTarget?.id} (${deleteTarget?.problem})? This will permanently remove it from your records.`}
+        confirmText="Delete Record"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

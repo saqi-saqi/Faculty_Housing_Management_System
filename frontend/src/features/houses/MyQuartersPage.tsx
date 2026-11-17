@@ -14,11 +14,8 @@ export function MyQuartersPage() {
   const { data: myHouse, isLoading } = useQuery<House | null>({
     queryKey: ['portal', 'my-house-details'],
     queryFn: async () => {
-      const res = await api.get('/houses');
-      const found = res.data.data.find(
-        (h: any) => h.current_tenant?.faculty_id === faculty?.id
-      );
-      return found || null;
+      const res = await api.get('/houses/my');
+      return res.data.data;
     }
   });
 

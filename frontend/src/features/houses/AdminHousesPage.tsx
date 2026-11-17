@@ -76,7 +76,7 @@ export function AdminHousesPage() {
       if (!tenant) throw new Error('No active tenant found');
 
       // Call vacate
-      await api.post('/allocations/vacate', { tenancyId: 1, notes: 'Vacated from Admin Housing Table' });
+      await api.post('/allocations/vacate', { tenancyId: tenant.tenancy_id || 1, notes: 'Vacated from Admin Housing Table' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'houses'] });

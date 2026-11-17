@@ -50,7 +50,9 @@ export interface House {
   description: string | null;
   created_at: string;
   updated_at: string;
+  house_address?: string;
   current_tenant?: {
+    tenancy_id?: number;
     faculty_id: number;
     faculty_name: string;
     start_date: string;

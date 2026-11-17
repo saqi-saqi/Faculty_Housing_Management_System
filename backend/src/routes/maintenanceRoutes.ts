@@ -5,6 +5,7 @@ import {
   getMyPendingRequests,
   submitRequest,
   cancelRequest,
+  deleteRequest,
   getAllRequests,
   updateRequestStatus,
   createRequestSchema,
@@ -22,6 +23,7 @@ router.get('/my', authenticate, getMyRequests);
 router.get('/my/pending', authenticate, getMyPendingRequests);
 router.post('/', authenticate, requireResident, validateBody(createRequestSchema), submitRequest);
 router.post('/:id/cancel', authenticate, cancelRequest);
+router.delete('/:id', authenticate, deleteRequest);
 
 // Admin endpoints
 router.get('/admin/all', authenticate, requireAdmin, getAllRequests);

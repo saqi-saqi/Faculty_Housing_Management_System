@@ -65,8 +65,8 @@ export class ApplicationService {
     }
 
     await db.execute(
-      `UPDATE applications SET status = 'withdrawn' WHERE id = ?`,
-      [applicationId]
+      `UPDATE applications SET status = ? WHERE id = ?`,
+      ['withdrawn', applicationId]
     );
   }
 

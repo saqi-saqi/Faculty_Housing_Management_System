@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getVacantHouses,
+  getMyHouse,
   getAllHouses,
   getHouseById,
   createHouse,
@@ -16,6 +17,7 @@ const router = Router();
 
 // Public / Authenticated
 router.get('/vacant', authenticate, getVacantHouses);
+router.get('/my', authenticate, getMyHouse);
 router.get('/:id', authenticate, getHouseById);
 
 // Admin-only

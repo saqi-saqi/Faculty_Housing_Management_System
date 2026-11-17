@@ -73,7 +73,7 @@ export class MaintenanceService {
 
   public async cancelRequest(requestId: number, userId: number): Promise<void> {
     const requests = await db.query<MaintenanceRequest>(
-      `SELECT id, user_id, status FROM maintenance_requests WHERE id = ?`,
+      `SELECT id, user_id, status, problem FROM maintenance_requests WHERE id = ?`,
       [requestId]
     );
 
@@ -91,7 +91,37 @@ export class MaintenanceService {
     }
 
     await db.execute(
-      `UPDATE maintenance_requests SET status = 'cancelled' WHERE id = ?`,
+      `UPDATE maintenance_requests SET status = ? WHERE id = ?`,
+      ['cancelled', requestId]
+    );
+
+    await db.execute(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?)`,
+      [userId, 'MAINTENANCE_CANCELLED', 'maintenance_request', requestId, `Resident cancelled maintenance ticket #${requestId} (${req.problem})`]
+    );
+  }
+
+  public async deleteRequest(requestId: number, userId: number): Promise<void> {
+    const requests = await db.query<MaintenanceRequest>(
+      `SELECT id, user_id, status FROM maintenance_requests WHERE id = ?`,
+      [requestId]
+    );
+
+    if (!requests.length) {
+      throw new Error('Maintenance request not found');
+    }
+
+    const req = requests[0];
+    if (req.user_id !== userId) {
+      throw new Error('You can only delete your own maintenance requests');
+    }
+
+    if (req.status !== 'pending' && req.status !== 'cancelled') {
+      throw new Error(`Cannot delete a request that is currently '${req.status}'`);
+    }
+
+    await db.execute(
+      `DELETE FROM maintenance_requests WHERE id = ?`,
       [requestId]
     );
   }

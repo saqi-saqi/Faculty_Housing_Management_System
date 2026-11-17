@@ -412,6 +412,12 @@ class DatabaseManager {
       if (app) {
         if (s.includes('status = ?')) {
           app.status = params[0];
+        } else if (s.includes("status = 'withdrawn'")) {
+          app.status = 'withdrawn';
+        } else if (s.includes("status = 'allocated'")) {
+          app.status = 'allocated';
+        } else if (s.includes("status = 'rejected'")) {
+          app.status = 'rejected';
         }
         app.updated_at = new Date().toISOString();
         return { insertId: 0, affectedRows: 1 };
@@ -492,6 +498,14 @@ class DatabaseManager {
       if (req) {
         if (s.includes('status = ?')) {
           req.status = params[0];
+        } else if (s.includes("status = 'cancelled'")) {
+          req.status = 'cancelled';
+        } else if (s.includes("status = 'pending'")) {
+          req.status = 'pending';
+        } else if (s.includes("status = 'in_progress'")) {
+          req.status = 'in_progress';
+        } else if (s.includes("status = 'resolved'")) {
+          req.status = 'resolved';
         }
         if (s.includes('admin_notes = ?')) {
           req.admin_notes = params[1];
@@ -500,6 +514,18 @@ class DatabaseManager {
           req.resolved_at = new Date().toISOString().replace('T', ' ').substring(0, 19);
         }
         req.updated_at = new Date().toISOString();
+        return { insertId: 0, affectedRows: 1 };
+      }
+      return { insertId: 0, affectedRows: 0 };
+    }
+
+    // Delete maintenance request
+    if (s.startsWith('delete from maintenance_requests')) {
+      const idMatch = s.match(/where\s+id\s*=\s*(\d+|\?)/);
+      const id = params.length > 0 ? Number(params[0]) : (idMatch && idMatch[1] !== '?' ? Number(idMatch[1]) : NaN);
+      const idx = this.memoryStore.maintenance_requests.findIndex((r: any) => r.id === id);
+      if (idx !== -1) {
+        this.memoryStore.maintenance_requests.splice(idx, 1);
         return { insertId: 0, affectedRows: 1 };
       }
       return { insertId: 0, affectedRows: 0 };

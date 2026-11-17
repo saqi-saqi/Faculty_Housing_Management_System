@@ -16,22 +16,18 @@ import { PageHeader } from '../../components/shared/PageHeader.js';
 import { StatusPill } from '../../components/shared/StatusPill.js';
 import { TableSkeleton } from '../../components/shared/LoadingSkeleton.js';
 import { formatDate } from '../../lib/utils.js';
-import { Application, MaintenanceRequest, Tenancy } from '../../types/index.js';
+import { Application, MaintenanceRequest, Tenancy, House } from '../../types/index.js';
 
 export function FacultyDashboard() {
   const { user, faculty } = useAuthStore();
   const isResident = !!user?.hasHouse;
 
-  // If resident: fetch my active tenancy and my maintenance tickets
-  const { data: myTenancies = [] } = useQuery<Tenancy[]>({
+  // If resident: fetch my active house and my maintenance tickets
+  const { data: myHouse } = useQuery<House | null>({
     queryKey: ['portal', 'my-house'],
     queryFn: async () => {
-      const res = await api.get('/houses');
-      // Find my allocated house
-      const myHouse = res.data.data.find(
-        (h: any) => h.current_tenant?.faculty_id === faculty?.id
-      );
-      return myHouse ? [myHouse] : [];
+      const res = await api.get('/houses/my');
+      return res.data.data;
     },
     enabled: isResident
   });
@@ -56,7 +52,7 @@ export function FacultyDashboard() {
   });
 
   const activeApp = myApplications.find((a) => a.status === 'pending');
-  const myHouseInfo = myTenancies[0];
+  const myHouseInfo = myHouse;
 
   return (
     <div className="space-y-6">
@@ -78,7 +74,7 @@ export function FacultyDashboard() {
                 Quarters {myHouseInfo?.house_number || 'Assigned'}
               </h2>
               <p className="text-sm text-muted-foreground max-w-xl">
-                {myHouseInfo?.house_address || 'Faculty Residential Enclave'}
+                {myHouseInfo?.address || myHouseInfo?.house_address || 'Faculty Residential Enclave'}
               </p>
             </div>
 

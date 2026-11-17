@@ -23,6 +23,20 @@ export async function getVacantHouses(req: Request, res: Response, next: NextFun
   }
 }
 
+export async function getMyHouse(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const facultyId = req.user?.facultyId;
+    if (!facultyId) {
+      res.status(200).json({ success: true, data: null });
+      return;
+    }
+    const house = await houseService.getMyHouse(facultyId);
+    res.status(200).json({ success: true, data: house });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getAllHouses(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const houses = await houseService.getAllHouses();

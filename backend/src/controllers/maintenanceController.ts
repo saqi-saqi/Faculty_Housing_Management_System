@@ -90,6 +90,25 @@ export async function cancelRequest(req: AuthenticatedRequest, res: Response, ne
   }
 }
 
+export async function deleteRequest(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const requestId = parseInt(req.params.id as string, 10);
+
+    await maintenanceService.deleteRequest(requestId, userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Maintenance ticket deleted successfully.'
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      error: { code: 'DELETE_REQUEST_FAILED', message: error.message }
+    });
+  }
+}
+
 export async function getAllRequests(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const { status, priority } = req.query as any;
